@@ -2,9 +2,6 @@
   (:require [clojure.test :as t]
             [gilded.core :as sut]))
 
-(def fixture
-  [{:name "foo", :quality 20, :sell-in 10}])
-
 (t/deftest backstage-passes-increase-with-age-up-to-expiration
   (let [fixture  [{:name sut/BACKSTAGE_PASS :quality 1 :sell-in 12}]
         store (sut/make-store fixture)]
