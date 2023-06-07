@@ -1,6 +1,7 @@
 (ns gilded.core-test
   (:require [clojure.test :as t]
-            [gilded.core :as sut]))
+            [gilded.core :as sut]
+            [matcher-combinators.test :refer [match?]]))
 
 (t/deftest backstage-passes-increase-with-age-up-to-expiration
   (let [fixture  [{:name sut/BACKSTAGE_PASS :quality 1 :sell-in 12}]
@@ -8,7 +9,7 @@
     (t/are [expected]
            (do
              (sut/update-quality! store)
-             (= expected (first (sut/item-seq store))))
+             (t/is (match? expected (first (sut/item-seq store)))))
       {:name sut/BACKSTAGE_PASS :quality  2 :sell-in 11}
       {:name sut/BACKSTAGE_PASS :quality  3 :sell-in 10}
       {:name sut/BACKSTAGE_PASS :quality  5 :sell-in  9}
@@ -29,7 +30,7 @@
     (t/are [expected]
            (do
              (sut/update-quality! store)
-             (= expected (first (sut/item-seq store))))
+             (t/is (match? expected (first (sut/item-seq store)))))
       {:name sut/SULFURAS :quality 10 :sell-in 1}
       {:name sut/SULFURAS :quality 10 :sell-in 1})))
 
@@ -39,7 +40,7 @@
     (t/are [expected]
            (do
              (sut/update-quality! store)
-             (= expected (first (sut/item-seq store))))
+             (t/is (match? expected (first (sut/item-seq store)))))
       {:name sut/AGED_BRIE :quality 50 :sell-in 1}
       {:name sut/AGED_BRIE :quality 50 :sell-in 0})))
 
@@ -49,7 +50,7 @@
     (t/are [expected]
            (do
              (sut/update-quality! store)
-             (= expected (first (sut/item-seq store))))
+             (t/is (match? expected (first (sut/item-seq store)))))
       {:name sut/AGED_BRIE :quality 1 :sell-in  1}
       {:name sut/AGED_BRIE :quality 2 :sell-in  0}
       {:name sut/AGED_BRIE :quality 4 :sell-in -1}
@@ -61,7 +62,7 @@
         store (sut/make-store fixture)]
     (t/are [expected]
            (do (sut/update-quality! store)
-               (= expected (first (sut/item-seq store))))
+               (t/is (match? expected (first (sut/item-seq store)))))
       {:name "foo" :quality 9 :sell-in  1}
       {:name "foo" :quality 8 :sell-in  0}
       {:name "foo" :quality 6 :sell-in -1}

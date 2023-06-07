@@ -5,7 +5,6 @@
 (def SULFURAS "Sulfuras, Hand of Ragnaros")
 
 
-
 (defn make-store [items]
   (assert (vector? items))
   (->> items
@@ -17,56 +16,49 @@
        (map deref)))
 ;; ---
 
-(defn incr-quality!* [item]
+(defn incr-quality [item]
   (if (< (:quality item) 50)
     (update item :quality inc)
     item))
 
-(defn dec-quality!* [item]
+(defn hyper-quality [{:keys [sell-in] :as  item}]
+  (cond->>
+   (incr-quality item)
+    (< sell-in 10) incr-quality
+    (< sell-in 5)  incr-quality))
+
+(defn dec-quality [item]
   (if (> (:quality item) 0)
     (update item :quality dec)
     item))
 
-(defn expired?* [item]
+(defn dec-sell-in [it]
+  (update it :sell-in dec))
+
+(defn zero-quality [item]
+  (update item :quality #(- % %)))
+
+(defn augment-item [{:keys [name] :as item}]
+  (condp = name
+    AGED_BRIE      (assoc item :update-sell-in dec-sell-in  :update-quality incr-quality  :on-expire incr-quality)
+    BACKSTAGE_PASS (assoc item :update-sell-in dec-sell-in  :update-quality hyper-quality :on-expire zero-quality)
+    SULFURAS       (assoc item :update-sell-in identity     :update-quality identity      :on-expire identity)
+    (assoc item :update-sell-in dec-sell-in  :update-quality dec-quality  :on-expire dec-quality)))
+
+(defn process-updates [{:keys [update-sell-in update-quality] :as item}]
   (->> item
-       :sell-in
-       neg?))
+       update-sell-in
+       update-quality))
 
-(defn update-quality [{:keys [name sell-in] :as it}]
-  (cond->>   it
-    (#{AGED_BRIE BACKSTAGE_PASS} name) incr-quality!*
-
-    (and (= name BACKSTAGE_PASS)
-         (< sell-in 10))
-    incr-quality!*
-
-    (and (= name BACKSTAGE_PASS)
-         (< sell-in 5))
-    incr-quality!*
-
-    (not (#{AGED_BRIE BACKSTAGE_PASS SULFURAS} name))
-    dec-quality!*))
-
-(defn update-sell-in [pred it]
-  (update it :sell-in
-          (fn [v]
-            (if pred
-              v
-              (dec v)))))
-
-(defn update-expired [{:keys [name] :as it}]
-  (if (expired?* it)
-    (cond (= name AGED_BRIE)       (incr-quality!* it)
-          (= name BACKSTAGE_PASS)  (assoc it :quality 0)
-          (not (#{SULFURAS} name)) (dec-quality!*  it)
-          :else  it)
-    it))
+(defn process-expired [{:keys [sell-in on-expire] :as item}]
+  (if (neg? sell-in)
+    (on-expire item)
+    item))
 
 (defn update-quality! [store]
   (doseq [item store]
-    (swap! item (fn [{:keys [name] :as it}]
-                  (->> it
-                       (update-sell-in (#{SULFURAS} name))
-                       update-quality
-                       update-expired)))))
+    (swap! item #(->> %
+                      augment-item
+                      process-updates
+                      process-expired))))
 
