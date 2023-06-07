@@ -1,14 +1,24 @@
 (ns gilded.main
-  (:require [gilded.core :as x]))
+  (:require
+   [clojure.string :as str]
+   [gilded.core :as x]))
 
-(defn item->str [item]
-  (str (:name item) ", " (:sell-in item) ", " (:quality item)))
+(defn- report-line [{:keys [name sell-in quality] :as _item}]
+  (str name ", " sell-in ", " quality))
 
-(defn print-store [store]
-  (println "name, sellIn, quality")
-  (doseq [item (x/item-seq store)]
-    (println (item->str item)))
-  (println))
+(defn- body-content [lines]
+  (let [header ["name, sellIn, quality"]
+        body   (mapv report-line lines)
+        footer [nil]]
+    (concat header body footer)))
+
+(defn- header [day]
+  (str "-------- day " day " --------"))
+
+(defn- body [lines]
+  (->> lines
+       body-content
+       (str/join "\n")))
 
 (def fixture
   [{:name "+5 Dexterity Vest"                          :quality 20  :sell-in 10}
@@ -27,6 +37,9 @@
                  (Long/parseLong (first args)))
         store (x/make-store fixture)]
     (dotimes [day n-days]
-      (println "-------- day" day "--------")
-      (print-store store)
-      (x/update-quality! store))))
+      (let [lines (x/item-seq store)
+            report (str (header day)
+                        "\n"
+                        (body lines))]
+        (println report)
+        (x/update-quality! store)))))
