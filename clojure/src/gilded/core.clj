@@ -6,10 +6,8 @@
 
 
 (defn make-store [items]
-  (assert (vector? items))
   (->> items
-       (map (fn [item] (atom item)))
-       vec))
+       (map (fn [item] (atom item)))))
 
 (defn item-seq [store]
   (->> store
@@ -40,25 +38,28 @@
 
 (defn augment-item [{:keys [name] :as item}]
   (condp = name
-    AGED_BRIE      (assoc item :update-sell-in dec-sell-in  :update-quality incr-quality  :on-expire incr-quality)
-    BACKSTAGE_PASS (assoc item :update-sell-in dec-sell-in  :update-quality hyper-quality :on-expire zero-quality)
-    SULFURAS       (assoc item :update-sell-in identity     :update-quality identity      :on-expire identity)
-    (assoc item :update-sell-in dec-sell-in  :update-quality dec-quality  :on-expire dec-quality)))
+    AGED_BRIE      (assoc item :update-sell-in dec-sell-in  :update-quality incr-quality  :update-expired incr-quality)
+    BACKSTAGE_PASS (assoc item :update-sell-in dec-sell-in  :update-quality hyper-quality :update-expired zero-quality)
+    SULFURAS       (assoc item :update-sell-in identity     :update-quality identity      :update-expired identity)
+    (assoc item :update-sell-in dec-sell-in  :update-quality dec-quality  :update-expired dec-quality)))
 
 (defn process-updates [{:keys [update-sell-in update-quality] :as item}]
   (->> item
        update-sell-in
        update-quality))
 
-(defn process-expired [{:keys [sell-in on-expire] :as item}]
+(defn process-expired [{:keys [sell-in update-expired] :as item}]
   (if (neg? sell-in)
-    (on-expire item)
+    (update-expired item)
     item))
 
-(defn update-quality! [store]
+(defn update-item [item]
+  (->> item
+       augment-item
+       process-updates
+       process-expired))
+
+(defn update-items! [store]
   (doseq [item store]
-    (swap! item #(->> %
-                      augment-item
-                      process-updates
-                      process-expired))))
+    (swap! item update-item)))
 

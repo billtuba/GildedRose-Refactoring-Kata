@@ -42,4 +42,4 @@
                         "\n"
                         (body lines))]
         (println report)
-        (x/update-quality! store)))))
+        (x/update-items! store)))))
