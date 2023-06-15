@@ -1,17 +1,9 @@
 (ns gilded.core)
 
-(def AGED_BRIE "Aged Brie")
+(def AGED_BRIE      "Aged Brie")
+(def SULFURAS       "Sulfuras, Hand of Ragnaros")
 (def BACKSTAGE_PASS "Backstage passes to a TAFKAL80ETC concert")
-(def SULFURAS "Sulfuras, Hand of Ragnaros")
 
-
-(defn make-store [items]
-  (->> items
-       (map (fn [item] (atom item)))))
-
-(defn item-seq [store]
-  (->> store
-       (map deref)))
 ;; ---
 
 (defn incr-quality [item]
@@ -59,7 +51,9 @@
        process-updates
        process-expired))
 
-(defn update-items! [store]
-  (doseq [item store]
-    (swap! item update-item)))
+(defn trim-output [item]
+  (select-keys item [:name :quality :sell-in]) )
+
+(defn update-items [store]
+  (iterate #(map (comp trim-output update-item) %) store))
 

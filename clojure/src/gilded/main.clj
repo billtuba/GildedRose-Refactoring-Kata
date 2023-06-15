@@ -1,7 +1,7 @@
 (ns gilded.main
   (:require
    [clojure.string :as str]
-   [gilded.core :as x]))
+   [gilded.core :as core]))
 
 (defn- report-line [{:keys [name sell-in quality] :as _item}]
   (str name ", " sell-in ", " quality))
@@ -20,7 +20,7 @@
        body-content
        (str/join "\n")))
 
-(def fixture
+(def default-items
   [{:name "+5 Dexterity Vest"                          :quality 20  :sell-in 10}
    {:name "Aged Brie"                                  :quality  0  :sell-in  2}
    {:name "Elixir of the Mongoose"                     :quality  7  :sell-in  5}
@@ -31,15 +31,30 @@
    {:name "Backstage passes to a TAFKAL80ETC concert"  :quality 49  :sell-in  5}
    {:name "Conjured Mana Cake"                         :quality  6  :sell-in  3}])
 
+(defn- format-report [[day rpt]]
+  (str day "\n" rpt "\n"))
+
+(defn- report-by-day [day lines]
+  [(header day)
+   (body lines)])
+
+(def default-length-of-report "2")
+
+(defn- parse-args [[n-days items]]
+  {:n-days (parse-long (or n-days default-length-of-report))
+   :items (or items default-items)})
+
+(defn- create-report
+  [n-days items]
+  (->> items
+       core/update-items
+       (map-indexed (comp
+                     format-report
+                     report-by-day))
+       (take n-days)
+       (str/join "")))
+
 (defn -main [& args]
-  (let [n-days (if (nil? (first args))
-                 2
-                 (Long/parseLong (first args)))
-        store (x/make-store fixture)]
-    (dotimes [day n-days]
-      (let [lines (x/item-seq store)
-            report (str (header day)
-                        "\n"
-                        (body lines))]
-        (println report)
-        (x/update-items! store)))))
+  (let [{:keys [n-days items]} (parse-args args)
+        the-report (create-report n-days items)]
+    (print the-report)))
