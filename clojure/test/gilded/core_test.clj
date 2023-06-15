@@ -68,3 +68,28 @@
 
     {:name "foo" :quality 0 :sell-in -1}
     {:name "foo" :quality 0 :sell-in -2}))
+
+(t/deftest conjured-degradation-test
+  (t/testing "'Conjured' items degrade in Quality twice as fast as normal items"
+    (t/are [it expected]
+           (m/match? expected (sut/update-item it))
+      {:name "Conjured" :quality 50 :sell-in 5}
+      {:name "Conjured" :quality 25 :sell-in 4}
+
+      {:name "Conjured" :quality 25 :sell-in 4}
+      {:name "Conjured" :quality 12 :sell-in 3}
+
+      {:name "Conjured" :quality 12 :sell-in 3}
+      {:name "Conjured" :quality  6 :sell-in 2}
+
+      {:name "Conjured" :quality  6 :sell-in 2}
+      {:name "Conjured" :quality  3 :sell-in 1}
+
+      {:name "Conjured" :quality  3 :sell-in 1}
+      {:name "Conjured" :quality  1 :sell-in 0}
+
+      {:name "Conjured" :quality  1 :sell-in  0}
+      {:name "Conjured" :quality  0 :sell-in -1}
+
+      {:name "Conjured" :quality  0 :sell-in -1}
+      {:name "Conjured" :quality  0 :sell-in -2})))

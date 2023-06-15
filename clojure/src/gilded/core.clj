@@ -1,8 +1,9 @@
 (ns gilded.core)
 
 (def AGED_BRIE      "Aged Brie")
-(def SULFURAS       "Sulfuras, Hand of Ragnaros")
+(def CONJURED       "Conjured")
 (def BACKSTAGE_PASS "Backstage passes to a TAFKAL80ETC concert")
+(def SULFURAS       "Sulfuras, Hand of Ragnaros")
 
 ;; ---
 
@@ -17,10 +18,13 @@
     (< sell-in 10) incr-quality
     (< sell-in 5)  incr-quality))
 
-(defn dec-quality [item]
+(defn quality-degrades [item]
   (if (> (:quality item) 0)
     (update item :quality dec)
     item))
+
+(defn quality-degrades-2x [item]
+  (update item :quality #(int (/ % 2))))
 
 (defn dec-sell-in [it]
   (update it :sell-in dec))
@@ -30,10 +34,11 @@
 
 (defn augment-item [{:keys [name] :as item}]
   (condp = name
-    AGED_BRIE      (assoc item :update-sell-in dec-sell-in  :update-quality incr-quality  :update-expired incr-quality)
-    BACKSTAGE_PASS (assoc item :update-sell-in dec-sell-in  :update-quality hyper-quality :update-expired zero-quality)
-    SULFURAS       (assoc item :update-sell-in identity     :update-quality identity      :update-expired identity)
-    (assoc item :update-sell-in dec-sell-in  :update-quality dec-quality  :update-expired dec-quality)))
+    AGED_BRIE      (assoc item :update-sell-in dec-sell-in  :update-quality incr-quality         :update-expired incr-quality)
+    BACKSTAGE_PASS (assoc item :update-sell-in dec-sell-in  :update-quality hyper-quality        :update-expired zero-quality)
+    SULFURAS       (assoc item :update-sell-in identity     :update-quality identity             :update-expired identity)
+    CONJURED       (assoc item :update-sell-in dec-sell-in  :update-quality quality-degrades-2x  :update-expired identity)
+    (assoc item :update-sell-in dec-sell-in  :update-quality quality-degrades  :update-expired quality-degrades)))
 
 (defn process-updates [{:keys [update-sell-in update-quality] :as item}]
   (->> item
