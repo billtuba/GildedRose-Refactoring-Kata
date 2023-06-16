@@ -38,19 +38,16 @@
   [(header day)
    (body lines)])
 
-(def default-length-of-report "2")
-
-(defn- parse-args [[n-days items]]
-  {:n-days (parse-long (or n-days default-length-of-report))
-   :items (or items default-items)})
+(defn- parse-args [[days-arg items-arg :as _args]]
+  (cond-> {:n-days 2 :items default-items}
+    (seq days-arg)  (assoc :n-days (parse-long (or days-arg "0")))
+    (seq items-arg) (assoc :items  (throw (Exception. "not impled yet")))))
 
 (defn- create-report
   [n-days items]
   (->> items
-       core/update-items
-       (map-indexed (comp
-                     format-report
-                     report-by-day))
+       (iterate core/update-items)
+       (map-indexed (comp format-report report-by-day))
        (take n-days)
        (str/join "")))
 
